@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaskapp-deployment
+spec:
+  selector:
+    matchLabels:
+      app: flaskapp
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: flaskapp
+    spec:
+      containers:
+      - name: flaskapp
+        image: flaskapp:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 1000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaskapp-service
+spec:
+  selector:
+    app: flaskapp
+  ports:
+  - protocol: "TCP"
+    port: 1000
+    targetPort: 1000
+  type: LoadBalancer
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flaskapp-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    #cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: prod.costin-gibaux.ovh
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                  name: billy-service
+                  port:
+                      number: 80
